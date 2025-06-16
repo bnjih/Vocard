@@ -45,6 +45,15 @@ from views import DebugView, HelpView, EmbedBuilderView
 def status_icon(status: bool) -> str:
     return "✅" if status else "❌"
 
+def is_admin_or_bot_access():
+    """Check if user has manage_guild permission or is in bot_access_user list"""
+    async def predicate(ctx):
+        return (
+            ctx.author.guild_permissions.manage_guild or 
+            ctx.author.id in func.settings.bot_access_user
+        )
+    return commands.check(predicate)
+
 class Settings(commands.Cog, name="settings"):
     def __init__(self, bot) -> None:
         self.bot: commands.Bot = bot
@@ -61,7 +70,7 @@ class Settings(commands.Cog, name="settings"):
         view.response = await send(ctx, embed, view=view)
     
     @settings.command(name="prefix", aliases=get_aliases("prefix"))
-    @commands.has_permissions(manage_guild=True)
+    @is_admin_or_bot_access()
     @commands.dynamic_cooldown(cooldown_check, commands.BucketType.guild)
     async def prefix(self, ctx: commands.Context, prefix: str):
         "Change the default prefix for message commands."
@@ -72,7 +81,7 @@ class Settings(commands.Cog, name="settings"):
         await send(ctx, "setPrefix", prefix, prefix)
 
     @settings.command(name="language", aliases=get_aliases("language"))
-    @commands.has_permissions(manage_guild=True)
+    @is_admin_or_bot_access()
     @commands.dynamic_cooldown(cooldown_check, commands.BucketType.guild)
     async def language(self, ctx: commands.Context, language: str):
         "You can choose your preferred language, the bot message will change to the language you set."
@@ -90,7 +99,7 @@ class Settings(commands.Cog, name="settings"):
         return [app_commands.Choice(name=lang, value=lang) for lang in LANGS.keys()]
 
     @settings.command(name="dj", aliases=get_aliases("dj"))
-    @commands.has_permissions(manage_guild=True)
+    @is_admin_or_bot_access()
     @commands.dynamic_cooldown(cooldown_check, commands.BucketType.guild)
     async def dj(self, ctx: commands.Context, role: discord.Role = None):
         "Set a DJ role or remove DJ role."
@@ -102,7 +111,7 @@ class Settings(commands.Cog, name="settings"):
         app_commands.Choice(name="FairQueue", value="FairQueue"),
         app_commands.Choice(name="Queue", value="Queue")
     ])
-    @commands.has_permissions(manage_guild=True)
+    @is_admin_or_bot_access()
     @commands.dynamic_cooldown(cooldown_check, commands.BucketType.guild)
     async def queue(self, ctx: commands.Context, mode: str):
         "Change to another type of queue mode."
@@ -111,7 +120,7 @@ class Settings(commands.Cog, name="settings"):
         await send(ctx, "setqueue", mode)
 
     @settings.command(name="247", aliases=get_aliases("247"))
-    @commands.has_permissions(manage_guild=True)
+    @is_admin_or_bot_access()
     @commands.dynamic_cooldown(cooldown_check, commands.BucketType.guild)
     async def playforever(self, ctx: commands.Context):
         "Toggles 24/7 mode, which disables automatic inactivity-based disconnects."
@@ -121,7 +130,7 @@ class Settings(commands.Cog, name="settings"):
         await send(ctx, '247', await get_lang(ctx.guild.id, "enabled" if not toggle else "disabled"))
 
     @settings.command(name="bypassvote", aliases=get_aliases("bypassvote"))
-    @commands.has_permissions(manage_guild=True)
+    @is_admin_or_bot_access()
     @commands.dynamic_cooldown(cooldown_check, commands.BucketType.guild)
     async def bypassvote(self, ctx: commands.Context):
         "Toggles voting system."
@@ -131,7 +140,7 @@ class Settings(commands.Cog, name="settings"):
         await send(ctx, 'bypassVote', await get_lang(ctx.guild.id, "enabled" if not toggle else "disabled"))
 
     @settings.command(name="view", aliases=get_aliases("view"))
-    @commands.has_permissions(manage_guild=True)
+    @is_admin_or_bot_access()
     @commands.dynamic_cooldown(cooldown_check, commands.BucketType.guild)
     async def view(self, ctx: commands.Context):
         "Show all the bot settings in your server."
@@ -177,7 +186,7 @@ class Settings(commands.Cog, name="settings"):
 
     @settings.command(name="volume", aliases=get_aliases("volume"))
     @app_commands.describe(value="Input a integer.")
-    @commands.has_permissions(manage_guild=True)
+    @is_admin_or_bot_access()
     @commands.dynamic_cooldown(cooldown_check, commands.BucketType.guild)
     async def volume(self, ctx: commands.Context, value: commands.Range[int, 1, 150]):
         "Set the player's volume."
@@ -189,7 +198,7 @@ class Settings(commands.Cog, name="settings"):
         await send(ctx, 'setVolume', value)
 
     @settings.command(name="togglecontroller", aliases=get_aliases("togglecontroller"))
-    @commands.has_permissions(manage_guild=True)
+    @is_admin_or_bot_access()
     @commands.dynamic_cooldown(cooldown_check, commands.BucketType.guild)
     async def togglecontroller(self, ctx: commands.Context):
         "Toggles the music controller."
@@ -207,7 +216,7 @@ class Settings(commands.Cog, name="settings"):
         await send(ctx, 'togglecontroller', await get_lang(ctx.guild.id, "enabled" if toggle else "disabled"))
 
     @settings.command(name="duplicatetrack", aliases=get_aliases("duplicatetrack"))
-    @commands.has_permissions(manage_guild=True)
+    @is_admin_or_bot_access()
     @commands.dynamic_cooldown(cooldown_check, commands.BucketType.guild)
     async def duplicatetrack(self, ctx: commands.Context):
         "Toggle Vocard to prevent duplicate songs from queuing."
@@ -221,7 +230,7 @@ class Settings(commands.Cog, name="settings"):
         return await send(ctx, "toggleDuplicateTrack", await get_lang(ctx.guild.id, "disabled" if toggle else "enabled"))
     
     @settings.command(name="customcontroller", aliases=get_aliases("customcontroller"))
-    @commands.has_permissions(manage_guild=True)
+    @is_admin_or_bot_access()
     @commands.dynamic_cooldown(cooldown_check, commands.BucketType.guild)
     async def customcontroller(self, ctx: commands.Context):
         "Customizes music controller embeds."
@@ -232,7 +241,7 @@ class Settings(commands.Cog, name="settings"):
         view.response = await send(ctx, view.build_embed(), view=view)
 
     @settings.command(name="controllermsg", aliases=get_aliases("controllermsg"))
-    @commands.has_permissions(manage_guild=True)
+    @is_admin_or_bot_access()
     @commands.dynamic_cooldown(cooldown_check, commands.BucketType.guild)
     async def controllermsg(self, ctx: commands.Context):
         "Toggles to send a message when clicking the button in the music controller."
@@ -243,7 +252,7 @@ class Settings(commands.Cog, name="settings"):
         await send(ctx, 'toggleControllerMsg', await get_lang(ctx.guild.id, "enabled" if toggle else "disabled"))
 
     @settings.command(name="stageannounce", aliases=get_aliases("stageannounce"))
-    @commands.has_permissions(manage_guild=True)
+    @is_admin_or_bot_access()
     @commands.dynamic_cooldown(cooldown_check, commands.BucketType.guild)
     async def stageannounce(self, ctx: commands.Context, template: str = None):
         "Customize the channel topic template"
@@ -254,7 +263,7 @@ class Settings(commands.Cog, name="settings"):
     @app_commands.describe(
         channel="Provide a request channel. If not, a text channel will be generated."
     )
-    @commands.has_permissions(manage_guild=True)
+    @is_admin_or_bot_access()
     @commands.dynamic_cooldown(cooldown_check, commands.BucketType.guild)
     async def setupchannel(self, ctx: commands.Context, channel: discord.TextChannel = None) -> None:
         "Sets up a dedicated channel for song requests in your server."
